@@ -1,0 +1,51 @@
+scan_interval: 1
+honeypot_path: "./test_decoys/"
+log_file: "test_system_events.log"
+honeypots:
+  enabled: true
+  files:
+    - "contraseña.txt"
+    - "pepe.txt"
+
+
+rules:
+  - name: "Simulación de escaneo"
+    process_name: "nmap"
+    cmd_contains: ["-sS"]
+    tag: "scanner"
+
+risk_levels:
+  suspicious: 1
+  detected: 2
+  full_monitoring: 3
+
+actions:
+  suspicious:
+    deception: true
+    log_only: true
+
+  detected:
+    deception: true
+    activate_honeypots: true
+    notify: false
+
+  full_monitoring:
+    containment: false
+    capture_network: false
+    notify: false
+
+honeypots:
+  enabled: true
+  files:
+    - "contraseña.txt"
+    - "pepe.txt"
+
+containment:
+  docker_image: "ubuntu"
+  isolation_timeout: 60
+  monitor_encryption: false
+  monitor_network: false
+
+notifications:
+  enabled: false
+  webhook_url: ""

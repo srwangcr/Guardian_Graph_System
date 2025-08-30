@@ -1,0 +1,32 @@
+# Entorno virtual
+venv/
+.env
+
+# Archivos de Python compilados
+__pycache__/
+*.py[cod]
+*.so
+
+# Archivos de log
+*.log
+
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de pruebas o temporales
+*.tmp
+*.bak
+
+# Configuración de IDEs
+.vscode/
+.idea/
+
+# Capturas o visuales opcionales
+*.png
+*.jpg
+*.jpeg
+*.gif
+
+# Archivos de red o captura
+*.pcap

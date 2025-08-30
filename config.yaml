@@ -1,0 +1,69 @@
+# Configuración general
+scan_interval: 5  # segundos entre escaneos de procesos
+honeypot_path: "/home/shared/decoys/"
+log_file: "system_events.log"
+
+# Reglas de comportamiento sospechoso
+rules:
+  - name: "Modificación de archivos sensibles"
+    process_name: "nano"
+    cmd_contains: ["passwd", "shadow"]
+    tag: "editor_sensible"
+
+  - name: "Escaneo de red"
+    process_name: "nmap"
+    cmd_contains: ["-sS", "-p"]
+    tag: "scanner"
+
+  - name: "Copia remota"
+    process_name: "scp"
+    cmd_contains: []
+    tag: "remote_copy"
+
+  - name: "Acceso a honeypot"
+    process_name: "ssh"
+    cmd_contains: ["pepe.txt", "contraseña.txt"]
+    tag: "honeypot_access"
+
+# Niveles de riesgo y umbrales
+risk_levels:
+  suspicious: 2
+  detected: 5
+  full_monitoring: 8
+
+# Acciones defensivas por nivel
+actions:
+  suspicious:
+    deception: true
+    log_only: true
+
+  detected:
+    deception: true
+    activate_honeypots: true
+    notify: true
+
+  full_monitoring:
+    containment: true
+    capture_network: true
+    notify: true
+
+# Trampas activas
+honeypots:
+  enabled: true
+  files:
+    - "contraseña.txt"
+    - "factura_2023.xlsx"
+    - "pepe.txt"
+    - "datos_bancarios.docx"
+
+# Contención
+containment:
+  docker_image: "ubuntu"
+  isolation_timeout: 3600  # segundos
+  monitor_encryption: true
+  monitor_network: true
+
+# Alertas externas
+notifications:
+  enabled: true
+  webhook_url: "https://your-webhook-url.com"

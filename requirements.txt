@@ -1,0 +1,32 @@
+# Monitoreo de procesos
+psutil
+
+# Configuración en YAML
+pyyaml
+
+# Captura de tráfico de red (solo se activa en containment)
+pyshark
+
+# Hashing avanzado (usado en honeypots y contención)
+hashlib  # Incluido en la librería estándar, no necesita instalación
+
+# Logging avanzado (opcional si decides usar loguru en lugar de logging básico)
+loguru  # Solo si lo usas para mejorar event_logger
+
+# Docker control desde Python (opcional si decides manejar contenedores vía API)
+docker  # Solo si no usas subprocess directamente
+os
+time
+psutil
+subprocess
+hashlib
+pyshark
+
+psutil
+pyyaml
+pyshark
+rich
+requests
+psycopg2-binary  # Cliente PostgreSQL para Python
+loguru
+mysql-connector-python
