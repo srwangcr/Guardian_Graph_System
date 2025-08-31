@@ -1,22 +1,28 @@
+Claro, Jurgen. Acá tenés la traducción completa al inglés y un issue profesional para el roadmap de la versión `0.2.0`.
+
+---
+
+## 🇬🇧 English Translation: README Overview
+
 ```markdown
 # 🛡️ GGS: Guardian Graph System
 
-**Defensa activa. Frustración táctica. Contención adaptativa.**  
-GGS es una herramienta modular de ciberseguridad diseñada para detectar, engañar y contener actores maliciosos en sistemas Linux. Su enfoque no es simplemente reaccionar, sino **anticipar y desestabilizar** al atacante mediante señuelos, monitoreo inteligente y respuestas controladas.
+**Active defense. Tactical frustration. Adaptive containment.**  
+GGS is a modular cybersecurity tool designed to detect, deceive, and contain malicious actors in Linux systems. Its approach is not just reactive—it aims to **anticipate and destabilize** attackers through decoys, intelligent monitoring, and controlled responses.
 
 ---
 
-## 🚀 Características principales
+## 🚀 Key Features
 
-- **Decepción estratégica:** Generación de honeypots y archivos señuelo para atraer y marcar comportamientos sospechosos.
-- **Evaluación de riesgo dinámica:** Asignación de niveles de riesgo por usuario según patrones de acceso, procesos activos y etiquetas de comportamiento.
-- **Contención modular:** Detección de cifrado en honeypots y activación de medidas de aislamiento (Docker, monitoreo de red, etc.).
-- **Logging persistente:** Registro estructurado de eventos con timestamps, niveles y contexto, configurable por entorno.
-- **Arquitectura escalable:** Separación clara entre núcleo (`core/`), utilidades (`utils/`) y pruebas (`tests/`), con configuración externa (`config.yaml`).
+- **Strategic deception:** Generates honeypots and bait files to attract and flag suspicious behavior.
+- **Dynamic risk assessment:** Assigns user risk levels based on access patterns, active processes, and behavioral tags.
+- **Modular containment:** Detects encryption attempts in honeypots and triggers isolation measures (Docker, network monitoring, etc.).
+- **Persistent logging:** Structured event logging with timestamps, severity levels, and contextual data, environment-configurable.
+- **Scalable architecture:** Clear separation between core (`core/`), utilities (`utils/`), and tests (`tests/`), with external configuration (`config.yaml`).
 
 ---
 
-## ⚙️ Instalación
+## ⚙️ Installation
 
 ```bash
 git clone https://github.com/jurgen-dev/GGS.git
@@ -28,19 +34,19 @@ pip install -r requirements.txt
 
 ---
 
-## 🧪 Pruebas
+## 🧪 Testing
 
-Para ejecutar la suite completa de pruebas:
+To run the full test suite:
 
 ```bash
 python run_tests.py
 ```
 
-Esto prepara el entorno, regenera honeypots, limpia logs y ejecuta todos los módulos en modo aislado.
+This prepares the environment, regenerates honeypots, clears logs, and executes all modules in isolated mode.
 
 ---
 
-## 📁 Estructura del proyecto
+## 📁 Project Structure
 
 ```
 GGS/
@@ -62,42 +68,92 @@ GGS/
 
 ---
 
-## 🧠 Filosofía del sistema
+## 🧠 System Philosophy
 
-GGS no busca bloquear al atacante. Busca **confundirlo, ralentizarlo y exponerlo**.  
-Cada interacción con un honeypot, cada proceso sospechoso, cada intento de cifrado es una oportunidad para marcar, registrar y responder.  
-Este sistema está diseñado para ser **extendido, auditado y adaptado** por la comunidad. Su modularidad permite integrar nuevas técnicas de detección, visualización CLI, o incluso respuestas automatizadas.
-
----
-
-## 📜 Licencia
-
-Este proyecto está licenciado bajo la **GNU General Public License v3.0 (GPLv3)**.  
-Esto significa que cualquier modificación o redistribución debe mantenerse libre y abierta.  
-Para más información, consultá [https://www.gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html).
+GGS doesn’t aim to block attackers—it aims to **confuse, slow down, and expose** them.  
+Every honeypot interaction, suspicious process, and encryption attempt is an opportunity to tag, log, and respond.  
+This system is designed to be **extended, audited, and adapted** by the community. Its modularity allows for new detection techniques, CLI visualization, or even automated responses.
 
 ---
 
-## 🤝 Contribuciones
+## 📜 License
 
-Toda mejora es bienvenida. Si querés agregar módulos, refactorizar lógica, o proponer nuevas estrategias de defensa, abrí un issue o enviá un pull request.  
-Este sistema es tan fuerte como la comunidad que lo respalda.
-
----
-
-## ✨ Estado actual
-
-✅ MVP funcional  
-✅ Pruebas automatizadas  
-✅ Arquitectura modular  
-🔜 Integración continua  
-🔜 Visualización CLI  
-🔜 Simulador de ataque
+This project is licensed under the **GNU General Public License v3.0 (GPLv3)**.  
+Any modification or redistribution must remain free and open.  
+More info: [https://www.gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html)
 
 ---
 
-**Construido por srwangcr** — estudiante de Ingeniería en Sistemas y desarrollador de herramientas abiertas para la defensa digital.  
-GGS es más que un proyecto: es una declaración de estrategia.
+## 🤝 Contributions
 
+All improvements are welcome. If you want to add modules, refactor logic, or propose new defense strategies, open an issue or submit a pull request.  
+This system is only as strong as the community behind it.
+
+---
+
+## ✨ Current Status
+
+✅ Functional MVP  
+✅ Automated tests  
+✅ Modular architecture  
+🔜 Continuous integration  
+🔜 CLI visualization  
+🔜 Attack simulator
+
+---
+
+**Built by srwangcr** — Systems Engineering student and developer of open defense tools.  
+GGS is more than a project: it’s a strategic statement.
 ```
+
+---
+
+## 🗂️ GitHub Issue: Roadmap for v0.2.0
+
+```markdown
+### 📍 Roadmap: GGS v0.2.0
+
+This issue outlines the planned features and improvements for the next release of Guardian Graph System (GGS).
+
+---
+
+## 🔧 Core Objectives
+
+- [ ] **CLI Visualization Module**  
+  Real-time display of honeypot interactions, risk levels, and containment triggers.
+
+- [ ] **Attack Simulation Engine**  
+  Simulate common attacker behaviors to test GGS responses and logging accuracy.
+
+- [ ] **SIEM Integration (Phase 1)**  
+  Export structured logs to external systems (e.g., Splunk, ELK) via JSON or syslog.
+
+- [ ] **Protocol Decoy Expansion**  
+  Add FTP, SSH, and HTTP honeypots with configurable behavior.
+
+- [ ] **Improved Risk Scoring Logic**  
+  Refine user profiling based on process trees, access frequency, and anomaly detection.
+
+---
+
+## 🧪 Testing & Stability
+
+- [ ] Expand test coverage for new modules
+- [ ] Add stress tests for honeypot generation and containment triggers
+- [ ] Validate compatibility across major Linux distros
+
+---
+
+## 📚 Documentation
+
+- [ ] Update README with new features
+- [ ] Add usage examples for CLI visualization
+- [ ] Create CONTRIBUTING.md for external collaborators
+
+---
+
+Feel free to suggest additional features or improvements below.  
+Let’s build GGS into a reference tool for open-source digital defense.
+```
+
 ---
