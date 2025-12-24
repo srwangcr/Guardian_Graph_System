@@ -6,6 +6,8 @@ honeypots:
   files:
     - "contraseña.txt"
     - "pepe.txt"
+    - "clave_secreta.sh"
+    - "datos_bancarios.sh"
 
 
 rules:

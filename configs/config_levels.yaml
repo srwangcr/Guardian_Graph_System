@@ -1,0 +1,64 @@
+# Niveles de severidad y respuestas de contención
+malicious_levels:
+  
+  # Nivel 1: Sospechoso (bajo riesgo)
+  level_1:
+    name: "Sospechoso"
+    severity: 1
+    actions:
+      - log_event
+      - monitor_process
+    isolation: false
+    network_capture: false
+    timeout_seconds: 300
+
+  # Nivel 2: Moderado (medio riesgo)
+  level_2:
+    name: "Moderado"
+    severity: 2
+    actions:
+      - log_event
+      - monitor_process
+      - increase_monitoring_frequency
+    isolation: false
+    network_capture: true
+    timeout_seconds: 600
+    capture_interface: "eth0"
+
+  # Nivel 3: Crítico (alto riesgo)
+  level_3:
+    name: "Crítico"
+    severity: 3
+    actions:
+      - log_event
+      - isolate_in_docker
+      - network_capture
+      - kill_process
+    isolation: true
+    network_capture: true
+    timeout_seconds: 10
+    capture_interface: "eth0"
+    docker_image: "ubuntu:latest"
+    docker_timeout: 3600
+
+# Patrones de detección asociados
+detection_patterns:
+  encryption_signatures:
+    - "\.crypt"
+    - "\.encrypted"
+    - "\.locked"
+  suspicious_processes:
+    - "mimikatz"
+    - "psexec"
+    - "powershell"
+  file_extensions_at_risk:
+    - ".docx"
+    - ".xlsx"
+    - ".pdf"
+    - ".jpg"
+
+# Umbrales de escalada
+escalation_rules:
+  files_modified_threshold: 5  # Escalar si N archivos se modifican
+  process_attempts_threshold: 3  # Escalar si N intentos fallidos
+  time_window_seconds: 60  # Ventana temporal para contar intentos

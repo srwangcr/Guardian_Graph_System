@@ -4,6 +4,7 @@ import psutil
 import subprocess
 import hashlib
 import pyshark
+import threading
 from utils.event_logger import log_event
 from utils.config_manager import load_rules
 
@@ -84,13 +85,63 @@ def containment_cycle(tagged_users):
         time.sleep(5)
 
 
+def create_decoy_process():
+    process_script = os.path.join(decoy_path, "decoy_process.sh")
+    with open(process_script, "w") as f:
+        f.write("#!/bin/bash\n")
+        f.write("while true; do sleep 60; done\n")
+    os.chmod(process_script, 0o755)
+    subprocess.Popen([process_script])
+    log_event("Proceso señuelo creado y en ejecución.")
+    return process_script
+def send_data_created_event(data):
+    log_event(f"Datos enviados al honeypot: {data}")
+def monitor_honeypot_files():
+    create_decoy_files()
+    decoy_process = create_decoy_process()
+    while True:
+        for filename in decoy_files:
+            full_path = os.path.join(decoy_path, filename)
+            if not os.path.exists(full_path):
+                log_event(f"Archivo señuelo eliminado: {filename}")
+                send_data_created_event(f"Archivo eliminado: {filename}")
+                create_decoy_files()
+            else:
+                current_hash = calculate_hash(full_path)
+                if current_hash != decoy_hashes.get(filename):
+                    log_event(f"Modificación detectada en: {filename}")
+                    send_data_created_event(f"Archivo modificado: {filename}")
+                    create_decoy_files()
+        time.sleep(10)
 
-def create_decoy_files():
-    os.makedirs(decoy_path, exist_ok=True)
-    for filename in decoy_files:
-        full_path = os.path.join(decoy_path, filename)
-        if not os.path.exists(full_path):
-            with open(full_path, "w") as f:
-                f.write("Archivo señuelo para análisis de ransomware.\n")
-            log_event(f"Honeypot creado: {full_path}")
-        decoy_hashes[filename] = calculate_hash(full_path)
+## crea y monitorea un proceso señuelo
+def _is_being_traced(pid: int) -> bool:
+    try:
+        with open(f"/proc/{pid}/status") as f:
+            for line in f:
+                if line.startswith("TracerPid:"):
+                    return int(line.split()[1]) != 0
+    except FileNotFoundError:
+        return False
+    return False
+
+def start_process_honeypot(alert_cb=log_event):
+    """
+    Crea un proceso señuelo y lanza un monitor que avisa si es trazado.
+    """
+    script = os.path.join(decoy_path, "decoy_monitored.sh")
+    with open(script, "w") as f:
+        f.write("#!/bin/bash\nwhile true; do sleep 60; done\n")
+    os.chmod(script, 0o755)
+    proc = subprocess.Popen([script])
+    log_event(f"Proceso señuelo creado (pid={proc.pid})")
+
+    def _monitor():
+        while proc.poll() is None:
+            if _is_being_traced(proc.pid):
+                alert_cb(f"ALERTA: proceso señuelo {proc.pid} está siendo monitoreado/traceado")
+                break
+            time.sleep(3)
+
+    threading.Thread(target=_monitor, daemon=True).start()
+    return proc
