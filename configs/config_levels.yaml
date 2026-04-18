@@ -44,9 +44,9 @@ malicious_levels:
 # Patrones de detección asociados
 detection_patterns:
   encryption_signatures:
-    - "\.crypt"
-    - "\.encrypted"
-    - "\.locked"
+    - '\.crypt'
+    - '\.encrypted'
+    - '\.locked'
   suspicious_processes:
     - "mimikatz"
     - "psexec"
