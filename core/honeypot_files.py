@@ -3,8 +3,12 @@ import time
 import psutil
 import subprocess
 import hashlib
-import pyshark
 import threading
+try:
+    import pyshark
+except ImportError:  # pragma: no cover - optional runtime dependency
+    pyshark = None
+import os
 from utils.event_logger import log_event
 from utils.config_manager import load_rules
 
@@ -12,7 +16,7 @@ from utils.config_manager import load_rules
 decoy_path = "/home/shared/decoys/"
 decoy_files = ["decoy1.txt", "decoy2.docx", "decoy3.xlsx"]
 decoy_hashes = {}
-config = load_rules("tests/test_config.yaml")  # usar config de pruebas
+config = load_rules(os.getenv("GGS_CONFIG_PATH", "tests/test_config.yaml"))  # usar config de pruebas
 decoy_path = config["honeypot_path"]
 decoy_files = config["honeypots"]["files"]
 decoy_hashes = {}
@@ -60,6 +64,9 @@ def isolate_process_in_docker(pid):
 
 # Activar PyShark para capturar tráfico saliente
 def capture_network_with_pyshark():
+    if pyshark is None:
+        log_event("PyShark no está disponible en este entorno.")
+        return
     log_event("Iniciando captura de red con PyShark")
     capture = pyshark.LiveCapture(interface='eth0', bpf_filter='tcp')
     capture.sniff(timeout=10)

@@ -1,10 +1,13 @@
+from __future__ import annotations
+
+import os
 import psutil
 import time
-from utils.event_logger import log_event
-from utils.config_manager import load_rules
 
-# Cargar reglas desde el archivo de configuración
-rules = load_rules("config.yaml")
+from utils.config_manager import load_rules
+from utils.event_logger import log_event
+
+rules = load_rules(os.getenv("GGS_CONFIG_PATH", "tests/test_config.yaml"))
 
 # Diccionario para almacenar usuarios etiquetados y sus tags
 tagged_users = {}  # Ejemplo: {'usuario1': ['tag1', 'tag2']}
@@ -33,7 +36,13 @@ def evaluate_rules(username, process_name, cmdline):
             # Validar que cmdline exista y no contenga el tag esperado
             if cmdline and rule['tag'] not in ' '.join(cmdline):
                 tag_user(username, rule['tag'])
-                log_event(f"Usuario '{username}' etiquetado con '{rule['tag']}' por ejecutar '{process_name}'")
+                log_event(
+                    f"Usuario '{username}' etiquetado con '{rule['tag']}' por ejecutar '{process_name}'",
+                    event_type="behavior_tag",
+                    username=username,
+                    process_name=process_name,
+                    tag=rule['tag'],
+                )
 
 # Función para etiquetar usuarios
 def tag_user(username, tag):

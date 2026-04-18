@@ -13,6 +13,6 @@ def test_user_count_returns_dict():
     # Validaciones
     assert isinstance(risk_map, dict)
     assert len(risk_map) >= 3
-    assert "user1" in risk_map
-    assert "user2" in risk_map
-    assert "user3" in risk_map
+    assert risk_map["user1"] == "Detected"
+    assert risk_map["user2"] == "Suspicious"
+    assert risk_map["user3"] == "Detected"

@@ -8,10 +8,12 @@ GGS es una herramienta modular de ciberseguridad diseñada para detectar, engañ
 
 ## 🚀 Características principales
 
+- **Logging estructurado:** Eventos JSONL con contexto, nivel, tipo de evento y compatibilidad con `structlog`/Prometheus.
+- **Métricas Prometheus:** Contadores de eventos, evaluaciones de riesgo, ataques demo y amenazas activas.
 - **Decepción estratégica:** Generación de honeypots y archivos señuelo para atraer y marcar comportamientos sospechosos.
-- **Evaluación de riesgo dinámica:** Asignación de niveles de riesgo por usuario según patrones de acceso, procesos activos y etiquetas de comportamiento.
+- **Evaluación de riesgo dinámica:** Asignación de niveles de riesgo por usuario según reglas, procesos activos y etiquetas de comportamiento.
 - **Contención modular:** Detección de cifrado en honeypots y activación de medidas de aislamiento (Docker, monitoreo de red, etc.).
-- **Logging persistente:** Registro estructurado de eventos con timestamps, niveles y contexto, configurable por entorno.
+- **Integración con Cowrie:** Un bridge consume eventos JSON de Cowrie y los convierte en alertas GGS.
 - **Arquitectura escalable:** Separación clara entre núcleo (`core/`), utilidades (`utils/`) y pruebas (`tests/`), con configuración externa (`config.yaml`).
 
 ---
@@ -37,6 +39,12 @@ python run_tests.py
 ```
 
 Esto prepara el entorno, regenera honeypots, limpia logs y ejecuta todos los módulos en modo aislado.
+
+También podés correr un demo reproducible con métricas:
+
+```bash
+python main.py --demo --iterations 8 --metrics-port 8000
+```
 
 ---
 
@@ -67,6 +75,76 @@ GGS/
 GGS no busca bloquear al atacante. Busca **confundirlo, ralentizarlo y exponerlo**.  
 Cada interacción con un honeypot, cada proceso sospechoso, cada intento de cifrado es una oportunidad para marcar, registrar y responder.  
 Este sistema está diseñado para ser **extendido, auditado y adaptado** por la comunidad. Su modularidad permite integrar nuevas técnicas de detección, visualización CLI, o incluso respuestas automatizadas.
+
+---
+
+## 🧮 Algoritmo de riesgo
+
+Pseudocódigo:
+
+```text
+para cada proceso activo:
+  si el nombre coincide con una regla y los tokens esperados aparecen en la línea de comandos:
+    sumar score según la regla
+
+para cada usuario etiquetado:
+  score_total = score_por_procesos + score_por_tags
+  si score_total >= full_monitoring:
+    nivel = full_monitoring
+  sino si score_total >= detected:
+    nivel = detected
+  sino si score_total >= suspicious:
+    nivel = suspicious
+  sino:
+    nivel = observed
+```
+
+Flujo resumido:
+
+```mermaid
+flowchart TD
+    A[Procesos activos] --> B[Match de reglas]
+    B --> C[Score por proceso]
+    D[Tags de usuario] --> E[Score por comportamiento]
+    C --> F[Score total]
+    E --> F
+    F --> G{Umbral}
+    G -->|>= full_monitoring| H[Contención]
+    G -->|>= detected| I[Decepción reforzada]
+    G -->|>= suspicious| J[Monitoreo]
+    G -->|< suspicious| K[Observación]
+```
+
+---
+
+## 📊 Resultados reales
+
+En una corrida de laboratorio del modo demo, el sistema detectó **3 de 4** ataques simulados.
+
+La validación ejecutada en este workspace produjo esta salida reproducible:
+
+- 4 escenarios simulados
+- 3 detecciones
+- 1 escenario benigno clasificado como observación
+
+Eso deja una tasa de detección del **75%** en el laboratorio demo actual.
+
+---
+
+## 🐝 Cowrie en el demo
+
+El flujo de integración queda así:
+
+1. Cowrie escribe eventos JSON en su volumen compartido.
+2. `core/cowrie_bridge.py` lee esos eventos.
+3. GGS los transforma en eventos estructurados con `log_event()`.
+4. Prometheus expone las métricas del bridge y del demo.
+
+Con Docker Compose, el arranque completo queda en un solo comando:
+
+```bash
+docker compose up --build
+```
 
 ---
 

@@ -1,0 +1,7 @@
+global:
+  scrape_interval: 5s
+
+scrape_configs:
+  - job_name: "ggs-demo"
+    static_configs:
+      - targets: ["ggs-demo:8000"]

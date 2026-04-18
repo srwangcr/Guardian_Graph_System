@@ -1,12 +1,16 @@
 import os
 import hashlib
 import subprocess
-import pyshark
+try:
+    import pyshark
+except ImportError:  # pragma: no cover - optional runtime dependency
+    pyshark = None
+import os
 from utils.event_logger import log_event
 from utils.config_manager import load_rules
 
 # Cargar configuración desde archivo de pruebas
-config = load_rules("tests/test_config.yaml")
+config = load_rules(os.getenv("GGS_CONFIG_PATH", "tests/test_config.yaml"))
 decoy_path = config["honeypot_path"]
 decoy_files = config["honeypots"]["files"]
 log_path = config["log_file"]
@@ -100,6 +104,9 @@ def isolate_process_in_docker(pid, docker_image="ubuntu:latest"):
 
 def capture_network_with_pyshark(interface="eth0"):
     """Captura tráfico de red con PyShark"""
+    if pyshark is None:
+        log_event(f"PyShark no está disponible en este entorno.", log_path=log_path)
+        return
     log_event(f"Iniciando captura de red en {interface}", log_path=log_path)
     try:
         capture = pyshark.LiveCapture(interface=interface, bpf_filter='tcp')
