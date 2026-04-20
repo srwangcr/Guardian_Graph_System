@@ -16,6 +16,7 @@ GGS is a modular active-defense prototype for Linux. The repository combines str
 - `core/containment_system.py` now supports queued containment actions and a separate privileged agent.
 - `core/cowrie_bridge.py` parses Cowrie JSON events and emits them as GGS events.
 - `utils/cli_dashboard.py` renders tagged users, risk levels, and an events panel with Rich.
+- `web/dashboard_streamlit.py` provides a lightweight web dashboard with live polling for alerts and risk endpoints.
 - `run_tests.py` prepares the test environment, regenerates decoys, and runs `pytest`.
 
 ## Configuration overview
@@ -181,6 +182,15 @@ curl -X POST http://localhost:8080/token -H "Content-Type: application/x-www-for
 
 Use the bearer token against `/v1/health`, `/v1/risk`, and `/v1/alerts`.
 
+### Web dashboard (Streamlit)
+
+```bash
+streamlit run web/dashboard_streamlit.py
+```
+
+The dashboard authenticates against `/token` and then auto-refreshes data from `/v1/alerts` and `/v1/risk`.
+Use the sidebar to configure API base URL, refresh interval, and alert limit.
+
 ### Privileged containment agent
 
 ```bash
@@ -242,6 +252,8 @@ GGS/
 ├── tests/
 │   ├── test_config.yaml
 │   └── ...
+├── web/
+│   └── dashboard_streamlit.py
 ├── config.yaml
 ├── docker-compose.yml
 ├── main.py
