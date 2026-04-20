@@ -62,8 +62,36 @@ containment:
   isolation_timeout: 3600  # segundos
   monitor_encryption: true
   monitor_network: true
+  queue_file: "containment_actions.queue"
+  direct_execute: false
 
 # Alertas externas
 notifications:
   enabled: true
   webhook_url: "https://your-webhook-url.com"
+
+# API segura (OAuth2 bearer)
+api:
+  tokens: []
+  service_accounts:
+    - username: "guardian_api"
+      password: "change_me"
+
+# Deteccion de anomalias (ML ligero estadistico)
+anomaly_detection:
+  enabled: true
+  history_size: 20
+  z_threshold: 2.5
+  max_boost: 4
+
+# Persistencia de auditoria hacia SIEM
+siem:
+  enabled: false
+  backend: "elasticsearch" # "elasticsearch" o "splunk"
+  elasticsearch:
+    endpoint: "http://localhost:9200"
+    index: "guardian-events"
+    api_key: ""
+  splunk:
+    endpoint: "https://localhost:8088/services/collector"
+    hec_token: ""

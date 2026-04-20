@@ -6,3 +6,7 @@ requests
 prometheus_client
 structlog
 pytest
+fastapi
+uvicorn
+python-multipart
+httpx

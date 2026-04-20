@@ -1,17 +1,19 @@
-# 🛡️ GGS: Guardian Graph System
+# GGS: Guardian Graph System
 
-GGS is a modular active-defense prototype for Linux. The repository combines structured logging, Prometheus telemetry, rule-based risk scoring, honeypots and decoys, experimental containment, and a Cowrie event bridge.
+GGS is a modular active-defense prototype for Linux. The repository combines structured logging, Prometheus telemetry, rule-based risk scoring, honeypots and decoys, privilege-aware containment orchestration, anomaly-assisted scoring, and a Cowrie event bridge.
 
 ## What is implemented today
 
-- `main.py` starts the CLI dashboard by default and can switch to demo mode with `--demo`.
-- `utils/event_logger.py` writes structured JSON events to disk and updates telemetry counters.
+- `main.py` starts the CLI dashboard by default and can switch to demo mode (`--demo`), API mode (`--api`), or privileged containment-agent mode (`--containment-agent`).
+- `utils/api_server.py` exposes a protected REST API with OAuth2 bearer token flow.
+- `utils/event_logger.py` writes structured JSON events to disk, updates telemetry counters, and can forward to SIEM backends.
 - `utils/telemetry.py` exposes Prometheus counters and gauges.
 - `core/risk_engine.py` classifies risk from scores and threshold rules.
+- `core/anomaly_detector.py` provides lightweight anomaly detection (rolling z-score) to complement static rules.
 - `core/behavior_monitor.py` tags users according to behavior rules when such rules are present in the loaded config.
-- `core/deception_engine.py` combines active processes, rules, and tags into a per-user risk summary.
+- `core/deception_engine.py` combines active processes, rules, tags, and anomaly boosts into a per-user risk summary.
 - `core/honeypot_files.py` creates, monitors, and recreates decoy files and a honeypot process.
-- `core/containment_system.py` applies severity-based containment actions from external configuration.
+- `core/containment_system.py` now supports queued containment actions and a separate privileged agent.
 - `core/cowrie_bridge.py` parses Cowrie JSON events and emits them as GGS events.
 - `utils/cli_dashboard.py` renders tagged users, risk levels, and an events panel with Rich.
 - `run_tests.py` prepares the test environment, regenerates decoys, and runs `pytest`.
@@ -31,8 +33,11 @@ This file currently defines:
 - `risk_levels`: thresholds for `suspicious`, `detected`, and `full_monitoring`.
 - `actions`: declarative response flags per risk level.
 - `honeypots`: enabled decoys and their filenames.
-- `containment`: Docker image and network/encryption monitoring flags.
+- `containment`: Docker image and network/encryption monitoring flags plus `queue_file` and `direct_execute` for privilege separation.
 - `notifications`: webhook settings for external alerts.
+- `api`: static tokens and service accounts for OAuth2 bearer access.
+- `anomaly_detection`: z-score detector controls (`enabled`, `history_size`, `z_threshold`, `max_boost`).
+- `siem`: optional remote audit forwarding (`elasticsearch` or `splunk`).
 
 ### [configs/config_levels.yaml](configs/config_levels.yaml)
 
@@ -51,14 +56,20 @@ flowchart TD
     A[main.py] --> B{Execution mode}
     B -->|default| C[utils/cli_dashboard.py]
     B -->|--demo| D[core/demo_runner.py]
+    B -->|--api| M[utils/api_server.py]
+    B -->|--containment-agent| N[core/containment_system.py]
 
     E[core/behavior_monitor.py] --> F[core/deception_engine.py]
+    O[core/anomaly_detector.py] --> F
     F --> G[core/risk_engine.py]
     G --> H[utils/event_logger.py]
     H --> I[utils/telemetry.py]
+    H --> P[SIEM: Elastic/Splunk]
 
     J[core/honeypot_files.py] --> H
-    K[core/containment_system.py] --> H
+    K[core/containment_system.py] --> Q[Containment queue]
+    N --> Q
+    N --> H
     L[core/cowrie_bridge.py] --> H
 ```
 
@@ -98,10 +109,11 @@ The bridge extracts fields such as `event_id`, `src_ip`, `username`, `password`,
 
 ## Risk scoring
 
-Risk classification is currently based on two inputs:
+Risk classification is currently based on three inputs:
 
 - Matching active processes against process rules loaded from `config.yaml`.
 - User tags accumulated by `core/behavior_monitor.py`.
+- Optional anomaly score boost from `core/anomaly_detector.py`.
 
 `core/risk_engine.py` reduces the resulting score to four levels:
 
@@ -114,8 +126,10 @@ Risk classification is currently based on two inputs:
 flowchart TD
     A[Active processes] --> B[Rule matches]
     C[User tags] --> D[Tag score]
+    K[Process count baseline] --> L[Anomaly boost]
     B --> E[Total score]
     D --> E
+    L --> E
     E --> F{Threshold}
     F -->|>= full_monitoring| G[full_monitoring]
     F -->|>= detected| H[detected]
@@ -153,6 +167,32 @@ This starts the demo, Cowrie, the Cowrie bridge, and Prometheus according to [do
 python main.py
 ```
 
+### Protected API (OAuth2 bearer)
+
+```bash
+python main.py --api --api-host 0.0.0.0 --api-port 8080
+```
+
+Then request a token:
+
+```bash
+curl -X POST http://localhost:8080/token -H "Content-Type: application/x-www-form-urlencoded" -d "username=guardian_api&password=change_me"
+```
+
+Use the bearer token against `/v1/health`, `/v1/risk`, and `/v1/alerts`.
+
+### Privileged containment agent
+
+```bash
+python main.py --containment-agent
+```
+
+Recommended deployment model:
+
+- Run dashboard/API and analysis components with restricted permissions.
+- Run only the containment agent with elevated privileges.
+- Keep `containment.direct_execute: false` in production.
+
 ### Demo with metrics
 
 ```bash
@@ -173,6 +213,8 @@ The current test suite verifies that:
 
 - `run_demo(iterations=4)` reports 3 detections out of 4 simulated scenarios.
 - `log_event()` writes structured JSON entries.
+- API authentication and protected endpoint access flow.
+- Anomaly detector baseline and spike detection behavior.
 - `parse_cowrie_event()` and `emit_cowrie_event()` handle Cowrie payloads correctly.
 - `load_rules()` reads configuration from YAML.
 
@@ -213,6 +255,7 @@ GGS/
 - The project is Linux-first: several modules depend on `/proc`, `psutil`, Docker, and optional network capture.
 - `pyshark` is optional at runtime, but network capture usually also requires `tshark` on the host.
 - `prometheus_client` is used for the local demo and dashboard metrics.
+- SIEM forwarding is non-blocking by design, so a remote outage does not stop local detection.
 
 ## License
 

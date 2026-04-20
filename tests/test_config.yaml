@@ -47,7 +47,32 @@ containment:
   isolation_timeout: 60
   monitor_encryption: false
   monitor_network: false
+  queue_file: "test_containment_actions.queue"
+  direct_execute: true
 
 notifications:
   enabled: false
   webhook_url: ""
+
+api:
+  tokens: ["test-token"]
+  service_accounts:
+    - username: "test"
+      password: "test"
+
+anomaly_detection:
+  enabled: true
+  history_size: 10
+  z_threshold: 2.5
+  max_boost: 3
+
+siem:
+  enabled: false
+  backend: "elasticsearch"
+  elasticsearch:
+    endpoint: ""
+    index: "guardian-events"
+    api_key: ""
+  splunk:
+    endpoint: ""
+    hec_token: ""

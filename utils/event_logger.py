@@ -4,11 +4,15 @@ import json
 import logging
 from datetime import datetime, timezone
 import os
+from typing import Any
+
+import requests
 
 from utils.telemetry import record_event
 
 
 _LOGGER_CACHE: dict[str, logging.Logger] = {}
+_SIEM_CONFIG: dict[str, Any] | None = None
 
 
 class StructuredJsonFormatter(logging.Formatter):
@@ -46,6 +50,77 @@ def _get_logger(log_path: str) -> logging.Logger:
     return logger
 
 
+def _load_siem_config() -> dict[str, Any]:
+    global _SIEM_CONFIG
+    if _SIEM_CONFIG is not None:
+        return _SIEM_CONFIG
+
+    config_path = os.getenv("GGS_CONFIG_PATH", "config.yaml")
+    if not os.path.exists(config_path):
+        _SIEM_CONFIG = {}
+        return _SIEM_CONFIG
+
+    try:
+        import yaml
+
+        with open(config_path, "r", encoding="utf-8") as f:
+            cfg = yaml.safe_load(f) or {}
+        _SIEM_CONFIG = cfg.get("siem", {}) or {}
+    except Exception:
+        _SIEM_CONFIG = {}
+    return _SIEM_CONFIG
+
+
+def _forward_to_elasticsearch(payload: dict[str, Any], config: dict[str, Any]) -> None:
+    endpoint = config.get("endpoint")
+    if not endpoint:
+        return
+
+    index_name = config.get("index", "guardian-events")
+    url = f"{endpoint.rstrip('/')}/{index_name}/_doc"
+    headers = {"Content-Type": "application/json"}
+    api_key = config.get("api_key")
+    if api_key:
+        headers["Authorization"] = f"ApiKey {api_key}"
+
+    requests.post(url, headers=headers, json=payload, timeout=2)
+
+
+def _forward_to_splunk(payload: dict[str, Any], config: dict[str, Any]) -> None:
+    endpoint = config.get("endpoint")
+    token = config.get("hec_token")
+    if not endpoint or not token:
+        return
+
+    headers = {
+        "Authorization": f"Splunk {token}",
+        "Content-Type": "application/json",
+    }
+    body = {
+        "event": payload,
+        "source": payload.get("source", "guardian_graph"),
+        "sourcetype": "guardian:json",
+    }
+    requests.post(endpoint, headers=headers, json=body, timeout=2)
+
+
+def _forward_to_siem(payload: dict[str, Any]) -> None:
+    config = _load_siem_config()
+    if not config or not config.get("enabled", False):
+        return
+
+    backend = (config.get("backend") or "").lower()
+    backend_config = config.get(backend, {}) if isinstance(config.get(backend), dict) else {}
+    try:
+        if backend == "elasticsearch":
+            _forward_to_elasticsearch(payload, backend_config)
+        elif backend == "splunk":
+            _forward_to_splunk(payload, backend_config)
+    except Exception:
+        # Never block local detection pipeline because of SIEM egress failures.
+        pass
+
+
 def log_event(message, level="info", log_path="system_events.log", event_type="general", source="guardian_graph", **context):
     logger = _get_logger(log_path)
 
@@ -73,8 +148,7 @@ def log_event(message, level="info", log_path="system_events.log", event_type="g
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     formatted = f"[{timestamp}] {level_name.upper()} {event_type}: {message}"
-    print(formatted)
-    return {
+    payload = {
         "timestamp": timestamp,
         "level": level_name,
         "message": message,
@@ -82,3 +156,7 @@ def log_event(message, level="info", log_path="system_events.log", event_type="g
         "source": source,
         "context": context,
     }
+    _forward_to_siem(payload)
+
+    print(formatted)
+    return payload

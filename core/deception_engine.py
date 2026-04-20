@@ -6,6 +6,7 @@ from collections import defaultdict
 import psutil
 from psutil import NoSuchProcess, AccessDenied, ZombieProcess
 
+from core.anomaly_detector import UserProcessAnomalyDetector
 from core.behavior_monitor import tagged_users
 from core.risk_engine import assess_process, classify_risk, humanize_risk_level, score_tags
 from utils.config_manager import load_rules
@@ -21,15 +22,26 @@ risk_levels = config.get("risk_levels", {
     "full_monitoring": 8,
 })
 
+anomaly_config = config.get("anomaly_detection", {})
+anomaly_detector = UserProcessAnomalyDetector(
+    history_size=int(anomaly_config.get("history_size", 20)),
+    z_threshold=float(anomaly_config.get("z_threshold", 2.5)),
+    max_boost=int(anomaly_config.get("max_boost", 4)),
+)
+
 def user_count():
     user_risk_actions = defaultdict(int)
     user_risk_level = {}
+    processes_by_user = defaultdict(int)
 
     for proc in psutil.process_iter(['pid', 'name', 'username']):
         try:
             process_name = proc.info['name']
             user = proc.info['username']
             cmdline = proc.cmdline() if hasattr(proc, "cmdline") else []
+
+            if user:
+                processes_by_user[user] += 1
 
             evidence = assess_process(process_name, cmdline, rules)
             if evidence is not None and user:
@@ -43,6 +55,23 @@ def user_count():
                 )
         except (NoSuchProcess, AccessDenied, ZombieProcess):
             continue
+
+    if anomaly_config.get("enabled", False):
+        anomalies = anomaly_detector.evaluate(dict(processes_by_user))
+        for user, assessment in anomalies.items():
+            if not assessment.is_anomalous:
+                continue
+            user_risk_actions[user] += assessment.score_boost
+            log_event(
+                f"Anomalia detectada para {user}: z={assessment.z_score:.2f}, boost={assessment.score_boost}",
+                event_type="anomaly_detection",
+                username=user,
+                z_score=round(assessment.z_score, 3),
+                baseline_mean=round(assessment.baseline_mean, 3),
+                baseline_std=round(assessment.baseline_std, 3),
+                process_count=assessment.process_count,
+                score_boost=assessment.score_boost,
+            )
 
     for user, tags in tagged_users.items():
         count = score_tags(tags)
